@@ -11,7 +11,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 var Message = mongoose.model('Message',{
-    name : String,
     message : String
 });
 
