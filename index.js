@@ -6,6 +6,9 @@ const http = require('http');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
+const rug = require('random-username-generator');
+
+let username = rug.generate();
 
 
 const port = 3000;
@@ -15,7 +18,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 var Message = mongoose.model('Message',{
-    message : String
+    username: String,
+    message: String
 });
 
 var dbUrl = 'mongodb://127.0.0.1:27017/chat-app';
@@ -32,12 +36,15 @@ app.get('/messages', (req, res) => {
 
 app.post('/messages', async (req, res) => {
     try{
-        const message = new Message(req.body);
+        const message = new Message({
+            username: username,
+            message: req.body.message
+        });
 
         await message.save();
-        console.log('Message saved');
+        console.log('Message saved.');
 
-        io.emit('message', req.body);
+        io.emit('message', message);
         res.sendStatus(200);
     }
     catch (error){
@@ -51,7 +58,8 @@ mongoose.connect(dbUrl);
 mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 io.on('connection', (socket) => {
-    console.log('User connected.');
+    username = rug.generate();
+    console.log(`User ${username} connected.`);
 });
 
 server.listen(port, () => {
