@@ -2,6 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const mongoose = require('mongoose');
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server);
 
 
 const port = 3000;
@@ -32,6 +36,9 @@ app.post('/messages', async (req, res) => {
 
         await message.save();
         console.log('Message saved');
+
+        io.emit('message', req.body);
+        res.sendStatus(200);
     }
     catch (error){
         res.sendStatus(500);
@@ -43,6 +50,10 @@ mongoose.connect(dbUrl);
 
 mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
-app.listen(port, () => {
+io.on('connection', (socket) => {
+    console.log('User connected.');
+});
+
+server.listen(port, () => {
     console.log(`Chat app listening on port ${port}.`);
 })
