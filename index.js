@@ -3,19 +3,30 @@ const bodyParser = require('body-parser');
 const app = express();
 const mongoose = require('mongoose');
 const http = require('http');
+var path = require('path');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
 const rug = require('random-username-generator');
-
-let username = rug.generate();
-
+const sessions = require('express-session');
 
 const port = 3000;
 
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
+
+const sessionMiddleware = sessions({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false
+})
+
+app.use(sessionMiddleware);
+
+const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
+
+io.use(wrap(sessionMiddleware));
 
 var Message = mongoose.model('Message',{
     username: String,
@@ -23,10 +34,6 @@ var Message = mongoose.model('Message',{
 });
 
 var dbUrl = 'mongodb://127.0.0.1:27017/chat-app';
-
-app.get('/', (req, res) => {
-    res.sendFile('index.html');
-})
 
 app.get('/messages', (req, res) => {
     Message.find({},(err, messages)=> {
@@ -36,8 +43,12 @@ app.get('/messages', (req, res) => {
 
 app.post('/messages', async (req, res) => {
     try{
+        if (!req.session.username) {
+            req.session.username = req.body.username;
+        }
+
         const message = new Message({
-            username: username,
+            username: req.body.username,
             message: req.body.message
         });
 
@@ -57,8 +68,29 @@ mongoose.connect(dbUrl);
 
 mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
+const sockets = {}
+
 io.on('connection', (socket) => {
-    username = rug.generate();
+    const session = socket.request.session;
+
+    if (session.username) {
+        username = session.username;
+    } else {
+        username = rug.generate();
+    }
+
+    sockets[socket.id] = username;
+    socket.emit('name-generated', sockets[socket.id]);
+    io.emit('update-peers', Object.values(sockets));
+
+    socket.on('disconnect', () => {
+        username = sockets[socket.id];
+        delete sockets[socket.id];
+        io.emit('update-peers', Object.values(sockets));
+
+        console.log(`User ${username} disconnected.`);
+    });
+
     console.log(`User ${username} connected.`);
 });
 
