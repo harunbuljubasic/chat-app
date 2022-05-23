@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 
 const sessionMiddleware = sessions({
-    secret: "changeit",
+    secret: "secret",
     resave: false,
     saveUninitialized: false
 })
@@ -43,14 +43,14 @@ app.get('/messages', (req, res) => {
 
 app.post('/messages', async (req, res) => {
     try{
+        if (!req.session.username) {
+            req.session.username = req.body.username;
+        }
+
         const message = new Message({
             username: req.body.username,
             message: req.body.message
         });
-
-        if (!req.session.username) {
-            req.session.username = req.body.username;
-        }
 
         await message.save();
         console.log('Message saved.');
@@ -75,10 +75,8 @@ io.on('connection', (socket) => {
 
     if (session.username) {
         username = session.username;
-        console.log(session);
     } else {
         username = rug.generate();
-        console.log('no session');
     }
 
     sockets[socket.id] = username;
@@ -87,10 +85,11 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         username = sockets[socket.id];
-        console.log(`User ${username} disconnected.`);
         delete sockets[socket.id];
         io.emit('update-peers', Object.values(sockets));
-    })
+
+        console.log(`User ${username} disconnected.`);
+    });
 
     console.log(`User ${username} connected.`);
 });
