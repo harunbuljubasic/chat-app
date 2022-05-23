@@ -33,6 +33,8 @@
     </div>
 </div>
 
+<ul id="peer-list"></ul>
+
 <script>
     const socket = io();
     let username = '';
@@ -53,11 +55,20 @@
     })
 
     socket.on('message', addMessages);
-    socket.on('update-peers', peers => {
-        console.log(peers);
-    });
+    socket.on('update-peers', updatePeers);
 
-    function addMessages(message){
+    function updatePeers(peers) {
+        $("#peer-list").empty();
+
+        peers.forEach((peer) => {
+            if (peer === username) {
+                return;
+            }
+            $("#peer-list").append(`<li>${peer}</li>`);
+        });
+    }
+
+    function addMessages(message) {
         $("#messages").append(`<li class="clearfix">
                                 <div class="message-data">
                                     <span class="message-data-time">${message.username}</span>
