@@ -4,7 +4,7 @@
 
 - Clone the repository:
 ```
-https://github.com/harunbuljubasic/chat-app.git
+git clone https://github.com/harunbuljubasic/chat-app.git
 ```
 
 - Navigate to the cloned directory: ```cd chat-app ```.
