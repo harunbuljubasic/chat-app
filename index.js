@@ -33,7 +33,7 @@ var Message = mongoose.model('Message',{
     message: String
 });
 
-var dbUrl = 'mongodb://127.0.0.1:27017/chat-app';
+var dbUrl = 'mongodb://mongo:27017/chat-app';
 
 app.get('/messages', (req, res) => {
     Message.find({},(err, messages)=> {
