@@ -15,5 +15,5 @@ docker build . -t harunbuljubasic/chat-app
 ```
 
 ```
-docker-composer up
+docker-compose up
 ```
