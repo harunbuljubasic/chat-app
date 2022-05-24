@@ -7,7 +7,7 @@
 https://github.com/harunbuljubasic/chat-app.git
 ```
 
-- Navigate to the app directory: ```cd chat-app ```.
+- Navigate to the cloned directory: ```cd chat-app ```.
 
 - Run following commands:
 ```
