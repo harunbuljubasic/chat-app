@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const app = express();
 const mongoose = require('mongoose');
 const http = require('http');
-var path = require('path');
+const path = require('path');
 const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
@@ -11,29 +11,27 @@ const rug = require('random-username-generator');
 const sessions = require('express-session');
 
 const port = 3000;
-
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+const dbUrl = 'mongodb://mongo:27017/chat-app';
+const sockets = {}
 
 const sessionMiddleware = sessions({
-    secret: "secret",
+    secret: 'secret',
     resave: false,
     saveUninitialized: false
 })
 
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(sessionMiddleware);
 
 const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
-
 io.use(wrap(sessionMiddleware));
 
 var Message = mongoose.model('Message',{
     username: String,
     message: String
 });
-
-var dbUrl = 'mongodb://mongo:27017/chat-app';
 
 app.get('/messages', (req, res) => {
     Message.find({},(err, messages)=> {
@@ -42,7 +40,7 @@ app.get('/messages', (req, res) => {
 })
 
 app.post('/messages', async (req, res) => {
-    try{
+    try {
         if (!req.session.username) {
             req.session.username = req.body.username;
         }
@@ -57,18 +55,14 @@ app.post('/messages', async (req, res) => {
 
         io.emit('message', message);
         res.sendStatus(200);
-    }
-    catch (error){
+    } catch (error) {
         res.sendStatus(500);
         return console.log('error',error);
     }
 })
 
 mongoose.connect(dbUrl);
-
 mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
-const sockets = {}
 
 io.on('connection', (socket) => {
     const session = socket.request.session;
